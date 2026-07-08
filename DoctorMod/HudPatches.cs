@@ -53,4 +53,25 @@ namespace ClassicUs.MedicMod
             catch (Exception e) { MedicAPIPlugin.Log.LogError("HostBroadcastSettings (OnPlayerJoined): " + e); }
         }
     }
+
+    [HarmonyPatch(typeof(PingTracker), nameof(PingTracker.Update))]
+    internal static class PingTracker_Update_Patch
+    {
+        private static void Postfix(PingTracker __instance)
+        {
+            try
+            {
+                if (__instance != null && __instance.text != null)
+                {
+                    var t = __instance.text;
+                    if (!t.Text.EndsWith("\nmod by Manu"))
+                        t.Text += "\nmod by Manu";
+                }
+            }
+            catch (Exception e)
+            {
+                MedicAPIPlugin.Log.LogError("PingTracker patch: " + e);
+            }
+        }
+    }
 }
