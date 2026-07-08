@@ -17,7 +17,7 @@ namespace ClassicUs.MedicMod
     public class MedicAPIPlugin : BasePlugin
     {
         public const string Guid = "classicus.medicmod";
-        public const string Version = "1.0.0";
+        public const string Version = "1.0.1";
         public const string ModName = "ClassicUsMedicMod";
 
         public const string RpcSyncSettingsKey = "classicus.medicmod.SyncSettings";
