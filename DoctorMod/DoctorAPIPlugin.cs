@@ -17,7 +17,7 @@ namespace ClassicUs.MedicMod
     public class MedicAPIPlugin : BasePlugin
     {
         public const string Guid = "classicus.medicmod";
-        public const string Version = "1.0.1";
+        public const string Version = "1.1.0";
         public const string ModName = "ClassicUsMedicMod";
 
         public const string RpcSyncSettingsKey = "classicus.medicmod.SyncSettings";
@@ -58,11 +58,7 @@ namespace ClassicUs.MedicMod
             ManactorAPI.RegisterRpcMethods(this);
             ManactorAPI.RegisterRpcMethods(typeof(MedicNetworking));
 
-            RoleRegistry.Register(
-                new MedicRoleDescriptor(),
-                () => IsTypeReady,
-                EnsureIl2CppTypeRegistered,
-                () => Il2CppType.Of<MedicModRole>());
+            RoleRegistry.RegisterVirtual(new MedicRoleDescriptor());
 
             SettingsMenuAPI.Register(5, builder =>
             {
@@ -92,7 +88,13 @@ namespace ClassicUs.MedicMod
             ModBadgeAPI.RegisterLoadedModBadge("MedicMod", Version, new Color(0.3f, 0.9f, 0.9f, 1f));
             ModBadgeAPI.RegisterPrelobbyTag("Medic Mod", "#4DE6E6");
 
-            new Harmony(Guid).PatchAll();
+            var harmony = new Harmony(Guid);
+            harmony.CreateClassProcessor(typeof(HudManager_FixedUpdate_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(HudManager_Start_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(RoleManager_AssignRolesForTeam_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(RoleManager_Start_MedicAssets_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(AmongUsClient_OnPlayerJoined_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(PingTracker_Update_Patch)).Patch();
 
             Log.LogInfo("Classic Us Medic Mod loaded.");
         }
@@ -109,19 +111,21 @@ namespace ClassicUs.MedicMod
             if (_classInjectorAttempted) return;
             _classInjectorAttempted = true;
 
-            ManactorAPI.RegisterIl2CppType(() =>
+            RegisterTypeNow();
+        }
+
+        private static void RegisterTypeNow()
+        {
+            try
             {
-                try
-                {
-                    ClassInjector.RegisterTypeInIl2Cpp<MedicModRole>();
-                    IsTypeReady = true;
-                    Log.LogInfo("MedicModRole type registered in IL2CPP.");
-                }
-                catch (System.Exception e)
-                {
-                    Log.LogError("MedicModRole registration failed: " + e);
-                }
-            });
+                ClassInjector.RegisterTypeInIl2Cpp<MedicModRole>();
+                IsTypeReady = true;
+                Log.LogInfo("MedicModRole type registered in IL2CPP.");
+            }
+            catch (System.Exception e)
+            {
+                Log.LogError("MedicModRole registration failed: " + e);
+            }
         }
 
         public static void HostBroadcastSettings()
@@ -154,8 +158,8 @@ namespace ClassicUs.MedicMod
 
         public static bool IsMedic(PlayerControl p)
         {
-            if (p == null || p.Data == null || p.Data.myRole == null) return false;
-            try { return p.Data.myRole.GetIl2CppType().Name == "MedicModRole"; }
+            if (p == null || p.Data == null) return false;
+            try { return RoleRegistry.IsAssigned(p, "MedicModRole"); }
             catch { return false; }
         }
     }
