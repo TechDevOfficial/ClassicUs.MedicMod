@@ -27,6 +27,11 @@ namespace ClassicUs.MedicMod
         {
             var client = AmongUsClient.Instance;
             if (client == null || !client.AmHost) return;
+            if (senderId != medicId)
+            {
+                MedicAPIPlugin.Log.LogWarning($"Revive: rejected spoofed request sender={senderId} medic={medicId}");
+                return;
+            }
             ResolveRevive(medicId, targetId);
         }
 
@@ -47,7 +52,16 @@ namespace ClassicUs.MedicMod
         }
 
         [ManactorRpc(BroadcastReviveKey)]
-        private static void OnBroadcastRevive(byte senderId, byte targetId) => ApplyRevive(targetId);
+        private static void OnBroadcastRevive(byte senderId, byte targetId)
+        {
+            if (!ManactorAPI.IsFromHost(senderId))
+            {
+                MedicAPIPlugin.Log.LogWarning($"Revive: ignored non-host RPC sender={senderId}");
+                return;
+            }
+
+            ApplyRevive(targetId);
+        }
 
         private static void ApplyRevive(byte targetId)
         {

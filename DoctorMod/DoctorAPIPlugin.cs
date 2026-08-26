@@ -147,6 +147,12 @@ namespace ClassicUs.MedicMod
         private static void OnSyncSettingsRpc(byte senderId, bool enabled, byte count, float roleChance,
             float cooldown, float range)
         {
+            if (!ManactorAPI.IsFromHost(senderId))
+            {
+                Log.LogWarning($"MedicSettings: ignored non-host RPC sender={senderId}");
+                return;
+            }
+
             ActiveEnabled = enabled;
             ActiveCount = count;
             ActiveRoleChance = roleChance;
