@@ -17,9 +17,11 @@ namespace ClassicUs.MedicMod
         public static Sprite LoadReviveSprite(Sprite original) => _reviveIcon.Get() ?? original;
         public static Sprite LoadIntroSprite() => _introSprite.Get();
 
+        private static bool _reviveSpriteRegistered;
+
         public static void RegisterRoleSprites(RoleManager roleManager)
         {
-            if (roleManager == null) return;
+            if (roleManager == null || _reviveSpriteRegistered) return;
 
             var revive = _reviveIcon.Get();
             if (revive == null)
@@ -28,7 +30,11 @@ namespace ClassicUs.MedicMod
                 return;
             }
 
+            // RoleManager.AddSprite wraps a native Dictionary.Add: calling it twice with the
+            // same key throws mid-native-call and can leave the IL2CPP heap in a state that
+            // segfaults later, so this must never run more than once per process.
             roleManager.AddSprite("reviveSprite", revive);
+            _reviveSpriteRegistered = true;
         }
     }
 }
